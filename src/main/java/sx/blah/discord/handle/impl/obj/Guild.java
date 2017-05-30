@@ -387,7 +387,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public IRole createRole() {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_ROLES));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_ROLES);
 
 		RoleObject response = ((DiscordClientImpl) client).REQUESTS.POST
 				.makeRequest(DiscordEndpoints.GUILDS + getStringID() + "/roles", RoleObject.class);
@@ -401,7 +401,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public List<Ban> getBans() {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.BAN));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.BAN);
 
 		BanObject[] bans = ((DiscordClientImpl) client).REQUESTS.GET
 				.makeRequest(DiscordEndpoints.GUILDS + getStringID() + "/bans", BanObject[].class);
@@ -450,9 +450,9 @@ public class Guild implements IGuild {
 	public void banUser(long userID, String reason, int deleteMessagesForDays) {
 		IUser user = getUserByID(userID);
 		if (getUserByID(userID) == null) {
-			DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.BAN));
+			PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.BAN);
 		} else {
-			DiscordUtils.checkPermissions(client, this, getRolesForUser(user), EnumSet.of(Permissions.BAN));
+			PermissionUtil.checkPermissionsAndHierarchy(this, client.getOurUser(), user, Permissions.BAN);
 		}
 		if (reason != null && reason.length() > Ban.MAX_REASON_LENGTH) {
 			throw new IllegalArgumentException("Reason length cannot be more than " + Ban.MAX_REASON_LENGTH);
@@ -467,7 +467,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public void pardonUser(long userID) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.BAN));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.BAN);
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(DiscordEndpoints.GUILDS + getStringID() + "/bans/" + Long.toUnsignedString(userID));
 	}
 
@@ -478,7 +478,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public void kickUser(IUser user, String reason) {
-		DiscordUtils.checkPermissions(client, this, user.getRolesForGuild(this), EnumSet.of(Permissions.KICK));
+		PermissionUtil.checkPermissionsAndHierarchy(this, client.getOurUser(), user, Permissions.KICK);
 		if (reason != null && reason.length() > Ban.MAX_REASON_LENGTH) {
 			throw new IllegalArgumentException("Reason length cannot be more than " + Ban.MAX_REASON_LENGTH);
 		}
@@ -491,7 +491,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public void editUserRoles(IUser user, IRole[] roles) {
-		DiscordUtils.checkPermissions(client, this, Arrays.asList(roles), EnumSet.of(Permissions.MANAGE_ROLES));
+		PermissionUtil.checkPermissionsAndHierarchy(this, user, Arrays.asList(roles), Permissions.MANAGE_ROLES);
 
 		try {
 			((DiscordClientImpl) client).REQUESTS.PATCH.makeRequest(
@@ -505,7 +505,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public void setDeafenUser(IUser user, boolean deafen) {
-		DiscordUtils.checkPermissions(client, this, user.getRolesForGuild(this), EnumSet.of(Permissions.VOICE_DEAFEN_MEMBERS));
+		PermissionUtil.checkPermissionsAndHierarchy(this, client.getOurUser(), user, Permissions.VOICE_DEAFEN_MEMBERS);
 
 		try {
 			((DiscordClientImpl) client).REQUESTS.PATCH.makeRequest(
@@ -518,7 +518,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public void setMuteUser(IUser user, boolean mute) {
-		DiscordUtils.checkPermissions(client, this, user.getRolesForGuild(this), EnumSet.of(Permissions.VOICE_MUTE_MEMBERS));
+		PermissionUtil.checkPermissionsAndHierarchy(this, client.getOurUser(), user, Permissions.VOICE_MUTE_MEMBERS);
 
 		try {
 			((DiscordClientImpl) client).REQUESTS.PATCH.makeRequest(
@@ -533,9 +533,9 @@ public class Guild implements IGuild {
 	public void setUserNickname(IUser user, String nick) {
 		boolean isSelf = user.equals(client.getOurUser());
 		if (isSelf) {
-			DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.CHANGE_NICKNAME));
+			PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.CHANGE_NICKNAME);
 		} else {
-			DiscordUtils.checkPermissions(client, this, user.getRolesForGuild(this), EnumSet.of(Permissions.MANAGE_NICKNAMES));
+			PermissionUtil.checkPermissionsAndHierarchy(this, client.getOurUser(), user, Permissions.MANAGE_NICKNAMES);
 		}
 
 		try {
@@ -549,7 +549,7 @@ public class Guild implements IGuild {
 
 	@Override
 	public void edit(String name, IRegion region, VerificationLevel level, Image icon, IVoiceChannel afkChannel, int afkTimeout) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_SERVER));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_SERVER);
 
 		if (name == null || name.length() < 2 || name.length() > 100)
 			throw new IllegalArgumentException("Guild name must be between 2 and 100 characters!");
@@ -625,7 +625,7 @@ public class Guild implements IGuild {
 	@Override
 	public IChannel createChannel(String name) {
 		shard.checkReady("create channel");
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_CHANNELS));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_CHANNELS);
 
 		if (name == null || name.length() < 2 || name.length() > 100)
 			throw new DiscordException("Channel name can only be between 2 and 100 characters!");
@@ -644,7 +644,7 @@ public class Guild implements IGuild {
 	@Override
 	public IVoiceChannel createVoiceChannel(String name) {
 		getShard().checkReady("create voice channel");
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_CHANNELS));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_CHANNELS);
 
 		if (name == null || name.length() < 2 || name.length() > 100)
 			throw new DiscordException("Channel name can only be between 2 and 100 characters!");
@@ -700,7 +700,8 @@ public class Guild implements IGuild {
 
 	@Override
 	public List<IInvite> getInvites() {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_SERVER));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_SERVER);
+
 		ExtendedInviteObject[] response = ((DiscordClientImpl) client).REQUESTS.GET.makeRequest(
 				DiscordEndpoints.GUILDS+ getStringID() + "/invites",
 				ExtendedInviteObject[].class);
@@ -714,7 +715,8 @@ public class Guild implements IGuild {
 
 	@Override
 	public List<IExtendedInvite> getExtendedInvites() {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_SERVER));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_SERVER);
+
 		ExtendedInviteObject[] response = ((DiscordClientImpl) client).REQUESTS.GET.makeRequest(
 				DiscordEndpoints.GUILDS+ getStringID() + "/invites",
 				ExtendedInviteObject[].class);
@@ -731,7 +733,7 @@ public class Guild implements IGuild {
 		if (rolesInOrder.length != getRoles().size())
 			throw new DiscordException("The number of roles to reorder does not equal the number of available roles!");
 
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_ROLES));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_ROLES);
 
 		int usersHighest = getRolesForUser(client.getOurUser()).stream()
 				.map(IRole::getPosition)
@@ -874,7 +876,7 @@ public class Guild implements IGuild {
 
 	public void loadWebhooks() {
 		try {
-			DiscordUtils.checkPermissions(getClient(), this, EnumSet.of(Permissions.MANAGE_WEBHOOKS));
+			PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_WEBHOOKS);
 		} catch (MissingPermissionsException ignored) {
 			return;
 		}

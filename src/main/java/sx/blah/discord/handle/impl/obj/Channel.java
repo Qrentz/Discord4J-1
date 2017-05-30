@@ -177,7 +177,7 @@ public class Channel implements IChannel {
 	}
 
 	private IMessage[] requestHistory(Long before, int limit) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.READ_MESSAGES, Permissions.READ_MESSAGE_HISTORY));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.READ_MESSAGES, Permissions.READ_MESSAGE_HISTORY);
 
 		String queryParams = "?limit=" + limit;
 
@@ -503,7 +503,7 @@ public class Channel implements IChannel {
 
 	@Override
 	public List<IMessage> bulkDelete(List<IMessage> messages) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_MESSAGES));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_MESSAGES);
 
 		if (isPrivate())
 			throw new UnsupportedOperationException("Cannot bulk delete in private channels!");
@@ -558,13 +558,13 @@ public class Channel implements IChannel {
 	@Override
 	public IMessage getMessageByID(long messageID) {
 		return messages.getOrElseGet(messageID, () -> {
-					DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.READ_MESSAGES, Permissions.READ_MESSAGE_HISTORY));
-					return RequestBuffer.request(() -> {
-						return DiscordUtils.getMessageFromJSON(this, client.REQUESTS.GET.makeRequest(
-								DiscordEndpoints.CHANNELS + this.getStringID() + "/messages/" + Long.toUnsignedString(messageID),
-								MessageObject.class));
-					}).get();
-				});
+			PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.READ_MESSAGES, Permissions.READ_MESSAGE_HISTORY);
+			return RequestBuffer.request(() -> {
+				return DiscordUtils.getMessageFromJSON(this, client.REQUESTS.GET.makeRequest(
+						DiscordEndpoints.CHANNELS + this.getStringID() + "/messages/" + Long.toUnsignedString(messageID),
+						MessageObject.class));
+			}).get();
+		});
 	}
 
 	@Override
@@ -624,10 +624,10 @@ public class Channel implements IChannel {
 	@Override
 	public IMessage sendMessage(String content, EmbedObject embed, boolean tts) {
 		getShard().checkReady("send message");
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.SEND_MESSAGES));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.SEND_MESSAGES);
 
 		if (embed != null) {
-			DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.EMBED_LINKS));
+			PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.EMBED_LINKS);
 		}
 
 		MessageObject response = null;
@@ -713,7 +713,7 @@ public class Channel implements IChannel {
 
 	@Override
 	public IMessage sendFiles(String content, boolean tts, EmbedObject embed, AttachmentPartEntry... entries) {
-		DiscordUtils.checkPermissions(getClient(), this, EnumSet.of(Permissions.SEND_MESSAGES, Permissions.ATTACH_FILES));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.SEND_MESSAGES, Permissions.ATTACH_FILES);
 
 		try {
 			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -747,7 +747,7 @@ public class Channel implements IChannel {
 	@Override
 	public IExtendedInvite createInvite(int maxAge, int maxUses, boolean temporary, boolean unique) {
 		getShard().checkReady("create invite");
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.CREATE_INVITE));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.CREATE_INVITE);
 
 		ExtendedInviteObject response = (client).REQUESTS.POST.makeRequest(
 				DiscordEndpoints.CHANNELS+getStringID()+"/invites",
@@ -789,7 +789,7 @@ public class Channel implements IChannel {
 	}
 
 	private void edit(ChannelEditRequest request) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_CHANNEL, Permissions.MANAGE_CHANNELS));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_CHANNEL, Permissions.MANAGE_CHANNELS);
 
 		try {
 			client.REQUESTS.PATCH.makeRequest(
@@ -842,7 +842,7 @@ public class Channel implements IChannel {
 
 	@Override
 	public void delete() {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_CHANNELS));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_CHANNELS);
 
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(DiscordEndpoints.CHANNELS+id);
 	}
@@ -902,7 +902,7 @@ public class Channel implements IChannel {
 
 	@Override
 	public void removePermissionsOverride(IUser user) {
-		DiscordUtils.checkPermissions(client, this, user.getRolesForGuild(guild), EnumSet.of(Permissions.MANAGE_PERMISSIONS));
+		PermissionUtil.checkPermissionsAndHierarchy(this, client.getOurUser(), user, Permissions.MANAGE_PERMISSIONS);
 
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(DiscordEndpoints.CHANNELS+getStringID()+"/permissions/"+user.getStringID());
 
@@ -911,7 +911,7 @@ public class Channel implements IChannel {
 
 	@Override
 	public void removePermissionsOverride(IRole role) {
-		DiscordUtils.checkPermissions(client, this, Collections.singletonList(role), EnumSet.of(Permissions.MANAGE_PERMISSIONS));
+		PermissionUtil.checkPermissionsAndHierarchy(this, client.getOurUser(), Collections.singletonList(role), Permissions.MANAGE_PERMISSIONS);
 
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(DiscordEndpoints.CHANNELS+getStringID()+"/permissions/"+role.getStringID());
 
@@ -929,7 +929,7 @@ public class Channel implements IChannel {
 	}
 
 	private void overridePermissions(String type, String id, EnumSet<Permissions> toAdd, EnumSet<Permissions> toRemove) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_PERMISSIONS));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_PERMISSIONS);
 
 		((DiscordClientImpl) client).REQUESTS.PUT.makeRequest(
 				DiscordEndpoints.CHANNELS+getStringID()+"/permissions/"+id,
@@ -938,7 +938,8 @@ public class Channel implements IChannel {
 
 	@Override
 	public List<IInvite> getInvites() {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_CHANNEL));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_CHANNEL);
+
 		ExtendedInviteObject[] response = client.REQUESTS.GET.makeRequest(
 				DiscordEndpoints.CHANNELS + id + "/invites",
 				ExtendedInviteObject[].class);
@@ -952,7 +953,8 @@ public class Channel implements IChannel {
 
 	@Override
 	public List<IExtendedInvite> getExtendedInvites() {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_CHANNEL));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_CHANNEL);
+
 		ExtendedInviteObject[] response = client.REQUESTS.GET.makeRequest(
 				DiscordEndpoints.CHANNELS + id + "/invites",
 				ExtendedInviteObject[].class);
@@ -987,7 +989,7 @@ public class Channel implements IChannel {
 
 	@Override
 	public void pin(IMessage message) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_MESSAGES));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_MESSAGES);
 
 		if (!message.getChannel().equals(this))
 			throw new DiscordException("Message channel doesn't match current channel!");
@@ -1000,7 +1002,7 @@ public class Channel implements IChannel {
 
 	@Override
 	public void unpin(IMessage message) {
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_MESSAGES));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_MESSAGES);
 
 		if (!message.getChannel().equals(this))
 			throw new DiscordException("Message channel doesn't match current channel!");
@@ -1041,7 +1043,7 @@ public class Channel implements IChannel {
 	@Override
 	public IWebhook createWebhook(String name, String avatar) {
 		getShard().checkReady("create webhook");
-		DiscordUtils.checkPermissions(client, this, EnumSet.of(Permissions.MANAGE_WEBHOOKS));
+		PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_WEBHOOKS);
 
 		if (name == null || name.length() < 2 || name.length() > 32)
 			throw new DiscordException("Webhook name can only be between 2 and 32 characters!");
@@ -1059,7 +1061,7 @@ public class Channel implements IChannel {
 
 	public void loadWebhooks() {
 		try {
-			DiscordUtils.checkPermissions(getClient(), this, EnumSet.of(Permissions.MANAGE_WEBHOOKS));
+			PermissionUtil.checkPermissions(this, client.getOurUser(), Permissions.MANAGE_WEBHOOKS);
 		} catch (MissingPermissionsException ignored) {
 			return;
 		}

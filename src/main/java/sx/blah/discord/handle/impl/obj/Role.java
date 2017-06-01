@@ -29,7 +29,7 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.LogMarkers;
-import sx.blah.discord.util.PermissionUtil;
+import sx.blah.discord.util.PermissionUtils;
 
 import java.awt.*;
 import java.io.IOException;
@@ -196,7 +196,7 @@ public class Role implements IRole {
 	}
 
 	private void edit(RoleEditRequest request) {
-		PermissionUtil.checkPermissionsAndHierarchy(guild, getClient().getOurUser(), Collections.singletonList(this), Permissions.MANAGE_ROLES);
+		PermissionUtils.requireHierarchicalPermissions(guild, getClient().getOurUser(), Collections.singletonList(this), Permissions.MANAGE_ROLES);
 
 		try {
 			DiscordUtils.getRoleFromJSON(guild,
@@ -257,7 +257,7 @@ public class Role implements IRole {
 
 	@Override
 	public void delete() {
-		PermissionUtil.checkPermissionsAndHierarchy(guild, getClient().getOurUser(), Collections.singletonList(this), Permissions.MANAGE_ROLES);
+		PermissionUtils.requireHierarchicalPermissions(guild, getClient().getOurUser(), Collections.singletonList(this), Permissions.MANAGE_ROLES);
 
 		((DiscordClientImpl) getClient()).REQUESTS.DELETE.makeRequest(DiscordEndpoints.GUILDS+guild.getStringID()+"/roles/"+id);
 	}

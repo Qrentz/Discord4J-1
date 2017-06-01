@@ -27,9 +27,8 @@ import sx.blah.discord.api.internal.json.requests.WebhookEditRequest;
 import sx.blah.discord.handle.impl.events.WebhookUpdateEvent;
 import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.Image;
-import sx.blah.discord.util.PermissionUtil;
+import sx.blah.discord.util.PermissionUtils;
 
-import java.util.EnumSet;
 import java.util.Objects;
 
 public class Webhook implements IWebhook {
@@ -103,7 +102,7 @@ public class Webhook implements IWebhook {
 	}
 
 	private void edit(String name, String avatar) {
-		PermissionUtil.checkPermissions(channel, client.getOurUser(), Permissions.MANAGE_WEBHOOKS);
+		PermissionUtils.requirePermissions(channel, client.getOurUser(), Permissions.MANAGE_WEBHOOKS);
 
 		WebhookObject response = ((DiscordClientImpl) client).REQUESTS.PATCH.makeRequest(
 				DiscordEndpoints.WEBHOOKS + id,
@@ -151,7 +150,7 @@ public class Webhook implements IWebhook {
 
 	@Override
 	public void delete() {
-		PermissionUtil.checkPermissions(channel, client.getOurUser(), Permissions.MANAGE_WEBHOOKS);
+		PermissionUtils.requirePermissions(channel, client.getOurUser(), Permissions.MANAGE_WEBHOOKS);
 
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(DiscordEndpoints.WEBHOOKS + id);
 	}

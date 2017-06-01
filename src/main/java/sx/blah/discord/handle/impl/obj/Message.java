@@ -336,7 +336,7 @@ public class Message implements IMessage {
 			throw new DiscordException("Cannot edit deleted messages!");
 
 		if (embed != null) {
-			PermissionUtil.checkPermissions(getChannel(), client.getOurUser(), Permissions.EMBED_LINKS);
+			PermissionUtils.requirePermissions(getChannel(), client.getOurUser(), Permissions.EMBED_LINKS);
 		}
 
 		((DiscordClientImpl) client).REQUESTS.PATCH.makeRequest(
@@ -412,7 +412,7 @@ public class Message implements IMessage {
 			if (channel.isPrivate())
 				throw new DiscordException("Cannot delete the other person's message in a private channel!");
 
-			PermissionUtil.checkPermissions(getChannel(), client.getOurUser(), Permissions.MANAGE_MESSAGES);
+			PermissionUtils.requirePermissions(getChannel(), client.getOurUser(), Permissions.MANAGE_MESSAGES);
 		}
 
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(DiscordEndpoints.CHANNELS + channel.getStringID() + "/messages/" + id);
@@ -519,7 +519,7 @@ public class Message implements IMessage {
 
 	@Override
 	public void removeAllReactions() {
-		PermissionUtil.checkPermissions(getChannel(), client.getOurUser(), Permissions.MANAGE_MESSAGES);
+		PermissionUtils.requirePermissions(getChannel(), client.getOurUser(), Permissions.MANAGE_MESSAGES);
 
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(
 				String.format(DiscordEndpoints.REACTIONS, this.getChannel().getStringID(), this.getStringID()));
@@ -572,7 +572,7 @@ public class Message implements IMessage {
 		}
 
 		if (this.getReactionByUnicode(emoji) == null)
-			PermissionUtil.checkPermissions(getChannel(), client.getOurUser(), Permissions.ADD_REACTIONS);
+			PermissionUtils.requirePermissions(getChannel(), client.getOurUser(), Permissions.ADD_REACTIONS);
 
 		try {
 			((DiscordClientImpl) client).REQUESTS.PUT.makeRequest(
@@ -595,7 +595,7 @@ public class Message implements IMessage {
 			throw new DiscordException("Reaction argument's message does not match this one.");
 
 		if (!user.equals(client.getOurUser())) {
-			PermissionUtil.checkPermissions(message.getChannel(), client.getOurUser(), Permissions.MANAGE_MESSAGES);
+			PermissionUtils.requirePermissions(message.getChannel(), client.getOurUser(), Permissions.MANAGE_MESSAGES);
 		}
 
 		try {

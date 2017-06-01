@@ -29,7 +29,7 @@ import sx.blah.discord.handle.obj.*;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.IDLinkedObjectWrapper;
 import sx.blah.discord.util.LogMarkers;
-import sx.blah.discord.util.PermissionUtil;
+import sx.blah.discord.util.PermissionUtils;
 import sx.blah.discord.util.cache.Cache;
 import sx.blah.discord.util.cache.LongMap;
 
@@ -254,7 +254,7 @@ public class User implements IUser {
 			throw new DiscordException("User must already be in a voice channel before they can be moved to another.");
 
 		// client must have permission to both move members and connect to the channel.
-		PermissionUtil.checkPermissions(channel, client.getOurUser(), Permissions.VOICE_MOVE_MEMBERS, Permissions.VOICE_CONNECT);
+		PermissionUtils.requirePermissions(channel, client.getOurUser(), Permissions.VOICE_MOVE_MEMBERS, Permissions.VOICE_CONNECT);
 
 		try {
 			((DiscordClientImpl) client).REQUESTS.PATCH.makeRequest(
@@ -289,13 +289,13 @@ public class User implements IUser {
 
 	@Override
 	public void addRole(IRole role) {
-		PermissionUtil.checkPermissionsAndHierarchy(role.getGuild(), client.getOurUser(), Collections.singletonList(role), Permissions.MANAGE_ROLES);
+		PermissionUtils.requireHierarchicalPermissions(role.getGuild(), client.getOurUser(), Collections.singletonList(role), Permissions.MANAGE_ROLES);
 		((DiscordClientImpl) client).REQUESTS.PUT.makeRequest(DiscordEndpoints.GUILDS + role.getGuild().getStringID() + "/members/" + id + "/roles/" + role.getStringID());
 	}
 
 	@Override
 	public void removeRole(IRole role) {
-		PermissionUtil.checkPermissionsAndHierarchy(role.getGuild(), client.getOurUser(), Collections.singletonList(role), Permissions.MANAGE_ROLES);
+		PermissionUtils.requireHierarchicalPermissions(role.getGuild(), client.getOurUser(), Collections.singletonList(role), Permissions.MANAGE_ROLES);
 		((DiscordClientImpl) client).REQUESTS.DELETE.makeRequest(DiscordEndpoints.GUILDS + role.getGuild().getStringID() + "/members/" + id + "/roles/" + role.getStringID());
 	}
 

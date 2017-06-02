@@ -858,45 +858,66 @@ public class Channel implements IChannel {
 
 	@Override
 	public EnumSet<Permissions> getModifiedPermissions(IUser user) {
-		if (isPrivate() || getGuild().getOwnerLongID() == user.getLongID())
+		if (isPrivate() || getGuild().getOwner().equals(user) || user.getPermissionsForGuild(getGuild()).contains(Permissions.ADMINISTRATOR))
 			return EnumSet.allOf(Permissions.class);
 
-		List<IRole> roles = user.getRolesForGuild(guild);
-		EnumSet<Permissions> permissions = user.getPermissionsForGuild(guild);
+		EnumSet<Permissions> perms = user.getPermissionsForGuild(getGuild());
 
-		PermissionOverride override = userOverrides.get(user.getLongID());
-		List<PermissionOverride> overrideRoles = roles.stream()
-				.filter(r -> roleOverrides.containsKey(r.getLongID()))
-				.map(role -> roleOverrides.get(role.getLongID()))
+		PermissionOverride everyoneOverride = roleOverrides.get(getGuild().getEveryoneRole().getLongID());
+		List<PermissionOverride> rolesOverrides = getGuild().getRolesForUser(user).stream()
+				.map(r -> roleOverrides.get(r.getLongID()))
+				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
-		Collections.reverse(overrideRoles);
-		for (PermissionOverride roleOverride : overrideRoles) {
-			permissions.addAll(roleOverride.allow());
-			permissions.removeAll(roleOverride.deny());
+		PermissionOverride userOverride = userOverrides.get(user.getLongID());
+
+		// The permissions explicitly allowed by role overrides. If a permission is already in this set, then it cannot be denied by another role override.
+		EnumSet<Permissions> allowedByRoles = EnumSet.noneOf(Permissions.class);
+
+		for (Permissions perm : Permissions.values()) {
+			// check everyone role override. This is least important in relation to other overrides.
+			if (everyoneOverride != null) {
+				if (everyoneOverride.isAllowed(perm)) perms.add(perm);
+				if (everyoneOverride.isDenied(perm)) perms.remove(perm);
+			}
+
+			// check role overrides.
+			for (PermissionOverride roleOverride : rolesOverrides) {
+				if (roleOverride.isAllowed(perm)) {
+					perms.add(perm);
+					allowedByRoles.add(perm);
+				}
+
+				if (roleOverride.isDenied(perm) && !allowedByRoles.contains(perm)) perms.remove(perm);
+			}
+
+			// check user override. Most important.
+			if (userOverride != null) {
+				if (userOverride.isAllowed(perm)) perms.add(perm);
+				if (userOverride.isDenied(perm)) perms.remove(perm);
+			}
 		}
 
-		if (override != null) {
-			permissions.addAll(override.allow());
-			permissions.removeAll(override.deny());
-		}
-
-		return permissions;
+		return perms;
 	}
 
 	@Override
 	public EnumSet<Permissions> getModifiedPermissions(IRole role) {
-		EnumSet<Permissions> base = role.getPermissions();
-		PermissionOverride override = roleOverrides.get(role.getLongID());
+		EnumSet<Permissions> perms = role.getPermissions();
 
-		if (override == null) {
-			if ((override = roleOverrides.get(guild.getEveryoneRole().getLongID())) == null)
-				return base;
+		PermissionOverride everyoneOverride = roleOverrides.get(getGuild().getEveryoneRole().getLongID());
+		PermissionOverride roleOverride = roleOverrides.get(role.getLongID());
+
+		if (everyoneOverride != null) {
+			perms.addAll(everyoneOverride.allow());
+			perms.removeAll(everyoneOverride.deny());
 		}
 
-		base.addAll(new ArrayList<>(override.allow()));
-		override.deny().forEach(base::remove);
+		if (roleOverride != null) {
+			perms.addAll(roleOverride.allow());
+			perms.removeAll(roleOverride.deny());
+		}
 
-		return base;
+		return perms;
 	}
 
 	@Override

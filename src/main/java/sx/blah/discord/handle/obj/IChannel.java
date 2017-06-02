@@ -1069,6 +1069,26 @@ public interface IChannel extends IDiscordObject<IChannel> {
 			return deny;
 		}
 
+		/**
+		 * Determines if a given permission is allowed by this override.
+		 *
+		 * @param permission The permission to check.
+		 * @return True if the set of permissions allowed by this override contains the passed permission.
+		 */
+		public boolean isAllowed(Permissions permission) {
+			return allow().contains(permission);
+		}
+
+		/**
+		 * Determines if a given permission is denied by this override.
+		 *
+		 * @param permission The permission to check.
+		 * @return True if the set of permissions denied by this override contains the passed permission.
+		 */
+		public boolean isDenied(Permissions permission) {
+			return deny().contains(permission);
+		}
+
 		@Override
 		public boolean equals(Object other) {
 			if (other == null)

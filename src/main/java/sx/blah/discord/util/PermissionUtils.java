@@ -358,6 +358,74 @@ public class PermissionUtils {
 	}
 
 	/**
+	 * Determines if user1 is higher in the role hierarchy than user2 in the given channel's guild
+	 * and user1 has all of the required permissions.
+	 * The former is determined by the positions of each of the users' highest roles.
+	 * This method takes into account user and roles overrides in the given channel.
+	 *
+	 * @param channel The channel to check.
+	 * @param user1 The user who must be higher in the role hierarchy and have all of the required permissions.
+	 * @param user2 The user who must be lower in the role hierarchy.
+	 * @param required The permissions user1 must have.
+	 *
+	 * @return True if user1 is higher in the role hierarchy than user2 and user1 has all of the required permissions.
+	 */
+	public static boolean hasHierarchicalPermissions(IChannel channel, IUser user1, IUser user2, Permissions... required) {
+		return hasHierarchicalPermissions(channel, user1, user2, arrayToEnumSet(required));
+	}
+
+	/**
+	 * Determines if user1 is higher in the role hierarchy than user2 in the given channel's guild
+	 * and user1 has all of the required permissions.
+	 * The former is determined by the positions of each of the users' highest roles.
+	 * This method takes into account user and roles overrides in the given channel.
+	 *
+	 * @param channel The channel to check.
+	 * @param user1 The user who must be higher in the role hierarchy and have all of the required permissions.
+	 * @param user2 The user who must be lower in the role hierarchy.
+	 * @param required The permissions user1 must have.
+	 *
+	 * @return True if user1 is higher in the role hierarchy than user2 and user1 has all of the required permissions.
+	 */
+	public static boolean hasHierarchicalPermissions(IChannel channel, IUser user1, IUser user2, EnumSet<Permissions> required) {
+		return hasPermissions(channel, user1, required) && isUserHigher(channel.getGuild(), user1, user2);
+	}
+
+	/**
+	 * Determines if the given user is higher in the role hierarchy than all of the given roles
+	 * and the user has all of the required permissions.
+	 * The former is determined by the position of the user's highest role and the position of the highest role in roles.
+	 * This method takes into account user and roles overrides in the given channel.
+	 *
+	 * @param channel The channel to check.
+	 * @param user The user who must be higher in the role hierarchy and have all of the required permissions.
+	 * @param roles The roles which must be lower in the role hierarchy.
+	 * @param required The permissions the user must have.
+	 *
+	 * @return True if the user is higher in the role hierarchy than every role in roles and the user has all of the required permissions.
+	 */
+	public static boolean hasHierarchicalPermissions(IChannel channel, IUser user, List<IRole> roles, Permissions... required) {
+		return hasHierarchicalPermissions(channel, user, roles, arrayToEnumSet(required));
+	}
+
+	/**
+	 * Determines if the given user is higher in the role hierarchy than all of the given roles
+	 * and the user has all of the required permissions.
+	 * The former is determined by the position of the user's highest role and the position of the highest role in roles.
+	 * This method takes into account user and roles overrides in the given channel.
+	 *
+	 * @param channel The channel to check.
+	 * @param user The user who must be higher in the role hierarchy and have all of the required permissions.
+	 * @param roles The roles which must be lower in the role hierarchy.
+	 * @param required The permissions the user must have.
+	 *
+	 * @return True if the user is higher in the role hierarchy than every role in roles and the user has all of the required permissions.
+	 */
+	public static boolean hasHierarchicalPermissions(IChannel channel, IUser user, List<IRole> roles, EnumSet<Permissions> required) {
+		return hasPermissions(channel, user, required) && isUserHigher(channel.getGuild(), user, roles);
+	}
+
+	/**
 	 * Determines if the position of roles1's highest role is greater than the position of roles2's highest role.
 	 *
 	 * @param roles1 The list of roles whose highest role's position must be greater.
